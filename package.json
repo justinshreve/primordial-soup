@@ -1,0 +1,32 @@
+{
+  "name": "primordial soup server",
+  "version": "0.0.1",
+  "type": "module",
+  "dependencies": {
+    "@types/node": "^16.18.50",
+    "axios": "^1.5.0",
+    "babel-core": "6.14.0",
+    "dprint": "^0.41.0",
+    "typescript": "^4.9.5",
+    "uuidv4": "^6.2.13",
+    "ws": "^8.14.1"
+  },
+  "scripts": {
+    "start": "npm run generate-types && concurrently \"npm run server\" \"npm run client\"",
+    "server": "npx ts-node-esm server/index.ts",
+    "client": "node start-client.js",
+    "dev": "echo \"This command has been deprecated. Use 'npm start'\" && exit 1",
+    "generate-types": "cp -R ./server/types/* ./client/src/types/server",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.5",
+    "concurrently": "3.1.0",
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "14.1.0",
+    "eslint-plugin-import": "2.2.0",
+    "eslint-plugin-jsx-a11y": "4.0.0",
+    "eslint-plugin-react": "6.9.0",
+    "ts-node": "^10.9.1"
+  }
+}
