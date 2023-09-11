@@ -5,6 +5,8 @@ import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { ExpectedJsonMessage } from './types/server/messages';
 import { ExpectedJsonRoomInfo } from './types/server/rooms';
 
+import './App.scss';
+
 const socketUrl = 'ws://localhost:8181';
 
 export default function App() {
@@ -86,19 +88,27 @@ export default function App() {
   );
 
   return (
-    <div>
-      <div>
-        <span>[primordial soup] is currently {connectionStatus}</span>
+    <div className="App">
+      <div className="header">
       </div>
-      <div>
-        <button onClick={handleClick} disabled={readyState !== ReadyState.OPEN}>
-          {hyperbeamSessionId && hyperbeamEmbedUrl
-            ? <span>Shutdown Hyperbeam</span>
-            : <span>Start Hyperbeam</span>}
-        </button>
-      </div>
-      <div>
+      <div className="wrapper">
         <div id="virtualComputerDiv"></div>
+        <div id="sidebar">
+          <div className="sidebarHeader">
+            <div>
+              <span>[primordial soup] is currently {connectionStatus}</span>
+            </div>
+            <div>
+              <button onClick={handleClick} disabled={readyState !== ReadyState.OPEN}>
+                {hyperbeamSessionId && hyperbeamEmbedUrl
+                  ? <span>Shutdown Hyperbeam</span>
+                  : <span>Start Hyperbeam</span>}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="footer">
       </div>
     </div>
   );
