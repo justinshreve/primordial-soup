@@ -1,21 +1,28 @@
 import Hyperbeam from '@hyperbeam/web';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 import { ExpectedJsonMessage } from './types/server/messages';
+import { ExpectedJsonRoomInfo } from './types/server/rooms';
 
 const socketUrl = 'ws://localhost:8181';
 
 export default function App() {
-  const { sendMessage, lastJsonMessage, readyState } = useWebSocket<ExpectedJsonMessage>(socketUrl);
+  const { sendMessage, lastJsonMessage, readyState } = useWebSocket<
+    ExpectedJsonMessage | ExpectedJsonRoomInfo
+  >(socketUrl);
   const virtualComputerDiv = document.getElementById('virtualComputerDiv') as HTMLDivElement;
 
+  const [room, setRoom] = useState('');
+  const [hyperbeamSessionId, setHyperbeamSessionId] = useState('');
+  const [hyperbeamEmbedUrl, setHyperbeamEmbedUrl] = useState('');
+
   const connectionStatus = {
-    [ReadyState.CONNECTING]: 'Connecting',
-    [ReadyState.OPEN]: 'Open',
-    [ReadyState.CLOSING]: 'Closing',
-    [ReadyState.CLOSED]: 'Closed',
-    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+    [ReadyState.CONNECTING]: 'connecting',
+    [ReadyState.OPEN]: 'connected',
+    [ReadyState.CLOSING]: 'closing',
+    [ReadyState.CLOSED]: 'closed',
+    [ReadyState.UNINSTANTIATED]: 'uninstantiated',
   }[readyState];
 
   useEffect(() => {
@@ -24,24 +31,43 @@ export default function App() {
         return;
       }
 
+      console.log(lastJsonMessage);
+
       switch (lastJsonMessage.type) {
         case 'computer:created':
+          setRoom(lastJsonMessage.room);
+          setHyperbeamSessionId(lastJsonMessage.session_id);
+          setHyperbeamEmbedUrl(lastJsonMessage.embed_url);
           await Hyperbeam(virtualComputerDiv, lastJsonMessage.embed_url);
+          break;
+        case 'room:info':
+          setRoom(lastJsonMessage.slug);
+          if (lastJsonMessage.hb_session_id) {
+            setHyperbeamSessionId(lastJsonMessage.hb_session_id);
+          } else {
+            setHyperbeamSessionId('');
+          }
+          if (lastJsonMessage.embed_url) {
+            setHyperbeamEmbedUrl(lastJsonMessage.embed_url);
+            await Hyperbeam(virtualComputerDiv, lastJsonMessage.embed_url);
+          } else {
+            setHyperbeamEmbedUrl('');
+          }
           break;
       }
     }
     messageHandler();
-  }, [lastJsonMessage]);
+  }, [lastJsonMessage, virtualComputerDiv]);
 
   // https://docs.hyperbeam.com/client-sdk/javascript/examples#control-tabs-programmatically
 
   /*
    * TODO:
+   * Send all relevent messages to all clients
+   * Build process for extension
    * User Authentication
-   * User Management / Roles
-   * Build process for server / making extension
-   * Destory VM
    * Basic layout
+   * User Management / Roles
    * Navigation controls
    * Playlist management
    * Playlist viewing
@@ -51,18 +77,25 @@ export default function App() {
    * Rooms
    */
 
-  const handleClickSendMessage = useCallback(
-    () => sendMessage(JSON.stringify({ type: 'computer:init' })),
-    [],
+  const handleClick = useCallback(
+    () =>
+      hyperbeamSessionId
+        ? sendMessage(JSON.stringify({ type: 'computer:shutdown', room }))
+        : sendMessage(JSON.stringify({ type: 'computer:init' })),
+    [room, hyperbeamSessionId, sendMessage],
   );
 
   return (
     <div>
       <div>
-        <button onClick={handleClickSendMessage} disabled={readyState !== ReadyState.OPEN}>
-          Click Me to send 'Hello'
+        <span>[primordial soup] is currently {connectionStatus}</span>
+      </div>
+      <div>
+        <button onClick={handleClick} disabled={readyState !== ReadyState.OPEN}>
+          {hyperbeamSessionId && hyperbeamEmbedUrl
+            ? <span>Shutdown Hyperbeam</span>
+            : <span>Start Hyperbeam</span>}
         </button>
-        <span>The WebSocket is currently {connectionStatus}</span>
       </div>
       <div>
         <div id="virtualComputerDiv"></div>
